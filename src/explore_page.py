@@ -70,6 +70,31 @@ def render_product_catalog() -> None:
         "Sustained high ratings": "Requires at least 40 reviews, a recent 20-review average of 4.5+, and no decline greater than 0.25 stars from the first 20 reviews.",
     }
     st.caption(descriptions.get(sort_option, "Products are ranked by the selected metric."))
+    if sort_option == "Fastest early traction":
+        chart_data = filtered.dropna(subset=["early_review_pace", "weighted_rating"]).copy()
+        if not chart_data.empty:
+            st.subheader("Early review speed and weighted rating")
+            st.caption(
+                "Each point is a filtered product with at least 20 reviews. Products farther right gained early reviews faster; products higher on the chart have stronger weighted ratings."
+            )
+            chart_data["Rating group"] = pd.cut(
+                chart_data["weighted_rating"],
+                bins=[0, 3.5, 4.25, 5.0],
+                labels=["Below 3.5", "3.5 - 4.25", "4.25+"],
+                include_lowest=True,
+            )
+            chart_data = chart_data.rename(
+                columns={
+                    "early_review_pace": "Early reviews / month",
+                    "weighted_rating": "Weighted rating",
+                }
+            )
+            st.scatter_chart(
+                chart_data,
+                x="Early reviews / month",
+                y="Weighted rating",
+                color="Rating group",
+            )
     display_columns = ["product_name", "average_stars", "review_count", "weighted_rating"]
     if sort_option == "Fastest early traction":
         display_columns += ["days_to_20", "early_review_pace"]
