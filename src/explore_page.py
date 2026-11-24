@@ -12,9 +12,15 @@ from src.data_loader import (
     load_product_catalog,
     peer_path,
 )
+from src.styles import page_heading
 
 
 def render_explore_page() -> None:
+    page_heading(
+        "Category intelligence",
+        "Explore products",
+        "Browse category data, compare historical review outcomes, and rank products with more context than star ratings alone.",
+    )
     category = st.selectbox("Product category", list(CATEGORY_FILES), key="explore_category")
     catalog_tab, peers_tab = st.tabs(["Product catalog", "Historical peers"])
     with catalog_tab:
@@ -64,9 +70,10 @@ def render_product_catalog(category: str) -> None:
         ].sort_values([sort_column, "review_count"], ascending=False)
     else:
         filtered = filtered.sort_values([sort_column, "review_count"], ascending=False)
-    first, second = st.columns(2)
+    first, second, third = st.columns(3)
     first.metric("Matching products", f"{len(filtered):,}")
-    second.metric("Ranking method", "Bayesian weighted rating" if sort_option == "Weighted rating" else sort_option)
+    second.metric("Category average", f"{catalog['average_stars'].mean():.2f}")
+    third.metric("Ranking", "Weighted rating" if sort_option == "Weighted rating" else sort_option)
     descriptions = {
         "Weighted rating": "Weighted rating combines a product's average stars with its review count, pulling low-volume products toward the category average.",
         "Fastest early traction": "Products are ranked by the fewest days from their first observed review to their 20th review.",
@@ -92,23 +99,31 @@ def render_product_catalog(category: str) -> None:
             "sustained_rating": "Sustained rating",
         }
     )
-    st.dataframe(
-        display,
-        use_container_width=True,
-        hide_index=True,
-        height=500,
-        column_config={
-            "Average stars": st.column_config.NumberColumn(format="%.2f"),
-            "Weighted rating": st.column_config.NumberColumn(format="%.2f"),
-            "Reviews": st.column_config.NumberColumn(format="%d"),
-            "Days to 20": st.column_config.NumberColumn(format="%.0f"),
-            "Early reviews / month": st.column_config.NumberColumn(format="%.1f"),
-            "First 20 stars": st.column_config.NumberColumn(format="%.2f"),
-            "Recent 20 stars": st.column_config.NumberColumn(format="%.2f"),
-            "Rating change": st.column_config.NumberColumn(format="%+.2f"),
-            "Sustained rating": st.column_config.NumberColumn(format="%.2f"),
-        },
-    )
+    catalog_column, explanation_column = st.columns([4, 1], gap="large")
+    with catalog_column:
+        st.subheader("Product catalog")
+        st.dataframe(
+            display,
+            use_container_width=True,
+            hide_index=True,
+            height=500,
+            column_config={
+                "Average stars": st.column_config.NumberColumn(format="%.2f"),
+                "Weighted rating": st.column_config.NumberColumn(format="%.2f"),
+                "Reviews": st.column_config.NumberColumn(format="%d"),
+                "Days to 20": st.column_config.NumberColumn(format="%.0f"),
+                "Early reviews / month": st.column_config.NumberColumn(format="%.1f"),
+                "First 20 stars": st.column_config.NumberColumn(format="%.2f"),
+                "Recent 20 stars": st.column_config.NumberColumn(format="%.2f"),
+                "Rating change": st.column_config.NumberColumn(format="%+.2f"),
+                "Sustained rating": st.column_config.NumberColumn(format="%.2f"),
+            },
+        )
+    with explanation_column.container(border=True):
+        st.subheader("How ranking works")
+        st.write(
+            "Weighted rating balances average stars with review volume, so a product with one five-star review does not lead the catalog."
+        )
 
 
 def render_historical_peers(category: str) -> None:

@@ -9,6 +9,7 @@ import pandas as pd
 import streamlit as st
 
 from src.data_loader import CATEGORY_FILES, load_historical_peers, peer_path
+from src.styles import page_heading
 from src.validation import validate_reviews
 
 
@@ -134,13 +135,19 @@ def render_similar_products(reviews: pd.DataFrame, category: str) -> None:
 
 
 def render_predict_page() -> None:
-    st.header("Predict a product's review outlook")
+    page_heading(
+        "Review forecast",
+        "Predict review outlook",
+        "Upload the first 20 reviews for one product to see its early signals and comparable historical outcomes.",
+    )
     thumbnail_column, product_column = st.columns([1, 6], vertical_alignment="center")
     with thumbnail_column:
         st.image(str(EXAMPLE_THUMBNAIL), width=105)
     with product_column:
-        st.subheader("Lavender Daily Moisturizer")
-        st.caption("Example product - upload the complete first 20 reviews for one parent product.")
+        st.markdown(
+            '<div class="product-identity"><div><h3>Lavender Daily Moisturizer</h3><span class="category-chip">Example product</span></div></div>',
+            unsafe_allow_html=True,
+        )
 
     category = st.selectbox(
         "Comparison category",
@@ -149,17 +156,21 @@ def render_predict_page() -> None:
         key="predict_category",
     )
 
-    st.download_button(
-        "Download CSV template",
-        data=csv_template(),
-        file_name="first_20_reviews_template.csv",
-        mime="text/csv",
-    )
-    uploaded_file = st.file_uploader(
-        "Drag and drop the first_20_reviews.csv here, or click Browse files",
-        type=["csv"],
-        help="Required columns: rating, text, date, verified_purchase.",
-    )
+    upload_column, template_column = st.columns([4, 1], vertical_alignment="bottom")
+    with upload_column:
+        uploaded_file = st.file_uploader(
+            "Upload first_20_reviews.csv",
+            type=["csv"],
+            help="Required columns: rating, text, date, verified_purchase.",
+        )
+    with template_column:
+        st.download_button(
+            "Download template",
+            data=csv_template(),
+            file_name="first_20_reviews_template.csv",
+            mime="text/csv",
+            use_container_width=True,
+        )
 
     if uploaded_file is None:
         st.info("Required fields: rating, text, date, verified_purchase. Upload exactly 20 reviews.")
