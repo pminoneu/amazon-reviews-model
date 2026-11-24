@@ -5,7 +5,7 @@ from __future__ import annotations
 import pandas as pd
 
 
-REQUIRED_COLUMNS = {"rating", "text", "date", "verified_purchase"}
+REQUIRED_COLUMNS = {"parent_asin", "rating", "text", "date", "verified_purchase"}
 
 
 def normalize_columns(reviews: pd.DataFrame) -> pd.DataFrame:
@@ -21,6 +21,9 @@ def normalize_columns(reviews: pd.DataFrame) -> pd.DataFrame:
         "timestamp": "date",
         "verified": "verified_purchase",
         "is_verified_purchase": "verified_purchase",
+        "asin": "parent_asin",
+        "product_asin": "parent_asin",
+        "product_id": "parent_asin",
     }
     return reviews.rename(columns=normalized).rename(columns=aliases)
 
@@ -37,6 +40,13 @@ def validate_reviews(reviews: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
 
     if len(reviews) != 20:
         errors.append(f"Upload exactly 20 reviews; this file contains {len(reviews)}.")
+
+    asins = reviews["parent_asin"].fillna("").astype(str).str.strip()
+    if asins.eq("").any():
+        errors.append("Each review needs a parent_asin (or asin) value.")
+    elif asins.nunique() != 1:
+        errors.append("All 20 reviews must have the same parent_asin.")
+    reviews["parent_asin"] = asins
 
     reviews["rating"] = pd.to_numeric(reviews["rating"], errors="coerce")
     if reviews["rating"].isna().any() or not reviews["rating"].between(1, 5).all():

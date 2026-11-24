@@ -8,7 +8,13 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-from src.data_loader import CATEGORY_FILES, load_historical_peers, peer_path
+from src.data_loader import (
+    CATEGORY_FILES,
+    catalog_path,
+    load_historical_peers,
+    load_product_catalog,
+    peer_path,
+)
 from src.styles import page_heading
 from src.validation import validate_reviews
 
@@ -70,6 +76,7 @@ def csv_template() -> bytes:
     """Create a small template that documents the required upload format."""
     example = pd.DataFrame(
         {
+            "parent_asin": ["B00YQ6X8EO"] * 20,
             "rating": [5] * 20,
             "text": [f"Example review {number}" for number in range(1, 21)],
             "date": pd.date_range("2025-01-01", periods=20, freq="7D").strftime("%Y-%m-%d"),
@@ -77,6 +84,24 @@ def csv_template() -> bytes:
         }
     )
     return example.to_csv(index=False).encode("utf-8")
+
+
+def resolve_uploaded_product(reviews: pd.DataFrame) -> tuple[str, str]:
+    """Find the uploaded product's name and category from its parent ASIN."""
+    parent_asin = reviews["parent_asin"].iloc[0]
+    matches: list[tuple[str, str]] = []
+    for category in CATEGORY_FILES:
+        source_path = catalog_path(category)
+        catalog = load_product_catalog(category, source_path.stat().st_mtime_ns)
+        product = catalog.loc[catalog["parent_asin"] == parent_asin, "product_name"]
+        if not product.empty:
+            matches.append((category, product.iloc[0]))
+    if not matches:
+        raise ValueError(
+            f"{parent_asin} was not found in the supported Health & Personal Care or All Beauty catalogs."
+        )
+    category, product_name = matches[0]
+    return category, product_name
 
 
 def find_similar_products(reviews: pd.DataFrame, category: str, limit: int = 5) -> pd.DataFrame:
@@ -161,26 +186,23 @@ def render_predict_page() -> None:
         "Predict review outlook",
         "Upload the first 20 reviews for one product to see its early signals and comparable historical outcomes.",
     )
-    thumbnail_column, product_column, category_column = st.columns([1, 4, 2], vertical_alignment="center")
+    uploaded_product = st.session_state.get(
+        "uploaded_product",
+        {"name": "Product identified from upload", "category": "Category detected automatically"},
+    )
+    thumbnail_column, product_column = st.columns([1, 6], vertical_alignment="center")
     with thumbnail_column:
         st.image(str(EXAMPLE_THUMBNAIL), width=105)
     with product_column:
         st.markdown(
-            '<div class="product-identity"><div><h3>Lavender Daily Moisturizer</h3><span class="category-chip">Example product</span></div></div>',
+            f'<div class="product-identity"><div><h3>{uploaded_product["name"]}</h3><span class="category-chip">{uploaded_product["category"]}</span></div></div>',
             unsafe_allow_html=True,
-        )
-    with category_column:
-        category = st.selectbox(
-            "Comparison category",
-            list(CATEGORY_FILES),
-            help="Your uploaded reviews will be compared only with products from this category.",
-            key="predict_category",
         )
 
     uploaded_file = st.file_uploader(
         "Upload first_20_reviews.csv",
         type=["csv"],
-        help="Required columns: rating, text, date, verified_purchase.",
+        help="Required columns: parent_asin (or asin), rating, text, date, verified_purchase.",
     )
     _, template_column, _ = st.columns([2, 1.2, 2])
     with template_column:
@@ -193,7 +215,7 @@ def render_predict_page() -> None:
         )
 
     if uploaded_file is None:
-        st.info("Required fields: rating, text, date, verified_purchase. Upload exactly 20 reviews.")
+        st.info("Required fields: parent_asin (or asin), rating, text, date, verified_purchase. Upload exactly 20 reviews.")
         return
 
     try:
@@ -207,6 +229,16 @@ def render_predict_page() -> None:
         for error in errors:
             st.error(error)
         return
+
+    try:
+        category, product_name = resolve_uploaded_product(reviews)
+    except ValueError as error:
+        st.error(str(error))
+        return
+    resolved_product = {"name": product_name, "category": category}
+    if st.session_state.get("uploaded_product") != resolved_product:
+        st.session_state.uploaded_product = resolved_product
+        st.rerun()
 
     st.success("20 / 20 valid reviews received.")
     summary_column, result_column = st.columns([3, 2], gap="large")
