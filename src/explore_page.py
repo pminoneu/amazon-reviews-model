@@ -35,7 +35,7 @@ def render_product_catalog() -> None:
     review_floor = minimum_reviews.number_input("Minimum reviews", min_value=0, value=10, step=10)
     sort_option = sort_by.selectbox(
         "Sort by",
-        ["Weighted rating", "Average stars", "Review count"],
+        ["Weighted rating", "Average stars", "Review count", "Fastest early traction", "Sustained high ratings"],
     )
 
     filtered = catalog.loc[catalog["review_count"] >= review_floor].copy()
@@ -50,20 +50,43 @@ def render_product_catalog() -> None:
         "Weighted rating": "weighted_rating",
         "Average stars": "average_stars",
         "Review count": "review_count",
+        "Fastest early traction": "days_to_20",
+        "Sustained high ratings": "sustained_rating",
     }[sort_option]
-    filtered = filtered.sort_values([sort_column, "review_count"], ascending=False)
+    if sort_option == "Fastest early traction":
+        filtered = filtered.dropna(subset=["days_to_20"]).sort_values([sort_column, "review_count"], ascending=[True, False])
+    elif sort_option == "Sustained high ratings":
+        filtered = filtered.loc[
+            filtered["recent_average_stars"].ge(4.5) & filtered["rating_change"].ge(-0.25)
+        ].sort_values([sort_column, "review_count"], ascending=False)
+    else:
+        filtered = filtered.sort_values([sort_column, "review_count"], ascending=False)
     first, second = st.columns(2)
     first.metric("Matching products", f"{len(filtered):,}")
     second.metric("Ranking method", "Bayesian weighted rating" if sort_option == "Weighted rating" else sort_option)
-    st.caption(
-        "Weighted rating combines a product's average stars with its review count, pulling low-volume products toward the category average."
-    )
-    display = filtered[["product_name", "average_stars", "review_count", "weighted_rating"]].rename(
+    descriptions = {
+        "Weighted rating": "Weighted rating combines a product's average stars with its review count, pulling low-volume products toward the category average.",
+        "Fastest early traction": "Products are ranked by the fewest days from their first observed review to their 20th review.",
+        "Sustained high ratings": "Requires at least 40 reviews, a recent 20-review average of 4.5+, and no decline greater than 0.25 stars from the first 20 reviews.",
+    }
+    st.caption(descriptions.get(sort_option, "Products are ranked by the selected metric."))
+    display_columns = ["product_name", "average_stars", "review_count", "weighted_rating"]
+    if sort_option == "Fastest early traction":
+        display_columns += ["days_to_20", "early_review_pace"]
+    elif sort_option == "Sustained high ratings":
+        display_columns += ["early_average_stars", "recent_average_stars", "rating_change", "sustained_rating"]
+    display = filtered[display_columns].rename(
         columns={
             "product_name": "Product name",
             "average_stars": "Average stars",
             "review_count": "Reviews",
             "weighted_rating": "Weighted rating",
+            "days_to_20": "Days to 20",
+            "early_review_pace": "Early reviews / month",
+            "early_average_stars": "First 20 stars",
+            "recent_average_stars": "Recent 20 stars",
+            "rating_change": "Rating change",
+            "sustained_rating": "Sustained rating",
         }
     )
     st.dataframe(
@@ -75,6 +98,12 @@ def render_product_catalog() -> None:
             "Average stars": st.column_config.NumberColumn(format="%.2f"),
             "Weighted rating": st.column_config.NumberColumn(format="%.2f"),
             "Reviews": st.column_config.NumberColumn(format="%d"),
+            "Days to 20": st.column_config.NumberColumn(format="%.0f"),
+            "Early reviews / month": st.column_config.NumberColumn(format="%.1f"),
+            "First 20 stars": st.column_config.NumberColumn(format="%.2f"),
+            "Recent 20 stars": st.column_config.NumberColumn(format="%.2f"),
+            "Rating change": st.column_config.NumberColumn(format="%+.2f"),
+            "Sustained rating": st.column_config.NumberColumn(format="%.2f"),
         },
     )
 

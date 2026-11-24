@@ -26,7 +26,12 @@ def build_catalog() -> pd.DataFrame:
         raise FileNotFoundError(f"Missing metadata file: {METADATA_PATH}")
 
     products: dict[str, dict[str, object]] = defaultdict(
-        lambda: {"sample_review_title": "No review title", "rating_sum": 0.0, "review_count": 0}
+        lambda: {
+            "sample_review_title": "No review title",
+            "rating_sum": 0.0,
+            "review_count": 0,
+            "reviews": [],
+        }
     )
     with INPUT_PATH.open("r", encoding="utf-8") as stream:
         for line in stream:
@@ -41,15 +46,12 @@ def build_catalog() -> pd.DataFrame:
                 product["sample_review_title"] = title
             product["rating_sum"] += float(rating)
             product["review_count"] += 1
+            if review.get("timestamp") is not None:
+                product["reviews"].append((int(review["timestamp"]), float(rating)))
 
     catalog = pd.DataFrame(
         [
-            {
-            "parent_asin": asin,
-            "sample_review_title": values["sample_review_title"],
-            "average_stars": values["rating_sum"] / values["review_count"],
-            "review_count": values["review_count"],
-            }
+            product_row(asin, values)
             for asin, values in products.items()
         ]
     )
@@ -62,6 +64,39 @@ def build_catalog() -> pd.DataFrame:
         + minimum_reviews / (catalog["review_count"] + minimum_reviews) * overall_average
     )
     return catalog.sort_values(["weighted_rating", "review_count"], ascending=False)
+
+
+def product_row(parent_asin: str, values: dict[str, object]) -> dict[str, object]:
+    """Calculate review-volume, pace, and sustained-rating fields for one product."""
+    ordered_reviews = sorted(values["reviews"])
+    review_count = values["review_count"]
+    row: dict[str, object] = {
+        "parent_asin": parent_asin,
+        "sample_review_title": values["sample_review_title"],
+        "average_stars": values["rating_sum"] / review_count,
+        "review_count": review_count,
+        "days_to_20": None,
+        "early_review_pace": None,
+        "early_average_stars": None,
+        "recent_average_stars": None,
+        "rating_change": None,
+        "sustained_rating": None,
+    }
+    if len(ordered_reviews) >= 20:
+        first_timestamp = ordered_reviews[0][0]
+        twentieth_timestamp = ordered_reviews[19][0]
+        days_to_20 = (twentieth_timestamp - first_timestamp) / 86_400_000
+        row["days_to_20"] = days_to_20
+        if days_to_20 > 0:
+            row["early_review_pace"] = 20 / days_to_20 * 30
+    if len(ordered_reviews) >= 40:
+        early_average = sum(rating for _, rating in ordered_reviews[:20]) / 20
+        recent_average = sum(rating for _, rating in ordered_reviews[-20:]) / 20
+        row["early_average_stars"] = early_average
+        row["recent_average_stars"] = recent_average
+        row["rating_change"] = recent_average - early_average
+        row["sustained_rating"] = (early_average + recent_average) / 2
+    return row
 
 
 def load_product_names() -> dict[str, str]:
