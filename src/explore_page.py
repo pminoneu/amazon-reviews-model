@@ -29,7 +29,7 @@ def render_product_catalog() -> None:
         st.code("python scripts/build_health_catalog.py", language="bash")
         return
 
-    catalog = load_health_catalog()
+    catalog = load_health_catalog(HEALTH_CATALOG_PATH.stat().st_mtime_ns)
     search, minimum_reviews, sort_by = st.columns([3, 1, 2])
     query = search.text_input("Search product name or ASIN", placeholder="e.g., vitamins or B07TDSJZMR")
     review_floor = minimum_reviews.number_input("Minimum reviews", min_value=0, value=10, step=10)

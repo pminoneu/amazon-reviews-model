@@ -48,6 +48,10 @@ def review_profile(product: pd.Series) -> str:
 
 
 @st.cache_data(show_spinner="Loading Health & Personal Care products...")
-def load_health_catalog() -> pd.DataFrame:
-    """Load the compact catalog derived from the local Health review file."""
-    return pd.read_csv(HEALTH_CATALOG_PATH)
+def load_health_catalog(catalog_version: int) -> pd.DataFrame:
+    """Load the compact catalog; cache invalidates whenever its CSV changes."""
+    catalog = pd.read_csv(HEALTH_CATALOG_PATH)
+    # Compatibility for a briefly cached pre-metadata catalog during redeploys.
+    if "product_name" not in catalog.columns:
+        catalog["product_name"] = catalog.get("sample_review_title", "Product name unavailable")
+    return catalog
