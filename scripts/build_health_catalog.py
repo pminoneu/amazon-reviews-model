@@ -15,12 +15,15 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 INPUT_PATH = ROOT / "data" / "Health_and_Personal_Care.jsonl"
+METADATA_PATH = ROOT / "data" / "meta_Health_and_Personal_Care.jsonl.gz"
 OUTPUT_PATH = ROOT / "results" / "health_product_catalog.csv"
 
 
 def build_catalog() -> pd.DataFrame:
     if not INPUT_PATH.exists():
         raise FileNotFoundError(f"Missing source file: {INPUT_PATH}")
+    if not METADATA_PATH.exists():
+        raise FileNotFoundError(f"Missing metadata file: {METADATA_PATH}")
 
     products: dict[str, dict[str, object]] = defaultdict(
         lambda: {"sample_review_title": "No review title", "rating_sum": 0.0, "review_count": 0}
@@ -50,6 +53,8 @@ def build_catalog() -> pd.DataFrame:
             for asin, values in products.items()
         ]
     )
+    product_names = load_product_names()
+    catalog["product_name"] = catalog["parent_asin"].map(product_names).fillna("Product name unavailable")
     overall_average = catalog["average_stars"].mean()
     minimum_reviews = catalog["review_count"].quantile(0.75)
     catalog["weighted_rating"] = (
@@ -57,6 +62,21 @@ def build_catalog() -> pd.DataFrame:
         + minimum_reviews / (catalog["review_count"] + minimum_reviews) * overall_average
     )
     return catalog.sort_values(["weighted_rating", "review_count"], ascending=False)
+
+
+def load_product_names() -> dict[str, str]:
+    """Read only the metadata needed for the product-name join."""
+    product_names: dict[str, str] = {}
+    import gzip
+
+    with gzip.open(METADATA_PATH, "rt", encoding="utf-8") as stream:
+        for line in stream:
+            product = json.loads(line)
+            parent_asin = product.get("parent_asin")
+            title = (product.get("title") or "").strip()
+            if parent_asin and title:
+                product_names[parent_asin] = title
+    return product_names
 
 
 if __name__ == "__main__":
