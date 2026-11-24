@@ -1,0 +1,159 @@
+{
+  "package": "Assignment6_Proposal_Team_Package",
+  "documentation_language": "English",
+  "scope": "This assignment proposal and supporting code, images, raw data, processed tables and verification evidence.",
+  "required_submission": "submission/Assignment6_Proposal_Early_Product_Success.pdf",
+  "file_count_excluding_manifest": 30,
+  "files": [
+    {
+      "path": "DATA_DICTIONARY.md",
+      "bytes": 4656,
+      "sha256": "c46c7704159560f7d041d284d1851a9baf71fa5cd20fceb588a8f156aa658ff9"
+    },
+    {
+      "path": "README.md",
+      "bytes": 5591,
+      "sha256": "62e10a477e2da2e857e75bd64b91f9c29a368ade36aeb80adef8d2900bfef502"
+    },
+    {
+      "path": "data/All_Beauty.jsonl.gz",
+      "bytes": 94441517,
+      "sha256": "ee00e66835567c3f12fde6a482f8d7055c22cac2d0924f677263affdd8a0e349"
+    },
+    {
+      "path": "data/meta_All_Beauty.jsonl.gz",
+      "bytes": 39871253,
+      "sha256": "51f8255c2794afd60e274c10d3e2d09dc1f671eba4ba35f74f748d8631216d05"
+    },
+    {
+      "path": "images/app_sketch.png",
+      "bytes": 189778,
+      "sha256": "b5a2822f7893a124a7c477495131c90fa5265c8866d001e3a73e877da2cfa878"
+    },
+    {
+      "path": "images/proposal_page_1.png",
+      "bytes": 370413,
+      "sha256": "09a1cd8216e1420824f5379acabc84abc8b0d1bd57cb7bdde38eee3a8a21f3b3"
+    },
+    {
+      "path": "images/proposal_page_2.png",
+      "bytes": 454859,
+      "sha256": "8f15feb8cdb16bd37fa4edf963b28eec084616b150d4ba4c1e63502c1e861fd1"
+    },
+    {
+      "path": "images/target_distribution.png",
+      "bytes": 31706,
+      "sha256": "2951575352a6ad2dac3b8220169d62772374c422c60d2a50a77c5a1c793ddad1"
+    },
+    {
+      "path": "proposal_content.md",
+      "bytes": 7774,
+      "sha256": "20bbf8a9304c5ae39b10b1b924a1b71110bfa6ffe9b5b3cb5729d7f0b8348fa0"
+    },
+    {
+      "path": "references/assignment_requirements_1.png",
+      "bytes": 545458,
+      "sha256": "9d8bedb1a58e66f7ad7d4b3f3223af7cfbadc78eab11b5aa1ee6264d0b10fec5"
+    },
+    {
+      "path": "references/assignment_requirements_2.png",
+      "bytes": 408442,
+      "sha256": "69678f5f3bb6cf137a9c15cb0103f98217e7fd1c9eeae00607c236fff3effdfb"
+    },
+    {
+      "path": "references/assignment_requirements_3.png",
+      "bytes": 1043442,
+      "sha256": "6557545dc74d97cdc0df3967e620a7fa629711e063306b9f1c5395ab898ba520"
+    },
+    {
+      "path": "references/original_idea4.pdf",
+      "bytes": 84994,
+      "sha256": "bb0ede6a59396b5f240ec359e5ccf19a3a8d7dc5146e53b1a068bfcf13b294b8"
+    },
+    {
+      "path": "requirements.txt",
+      "bytes": 60,
+      "sha256": "5077b4443309bc1533999194d0f97e1f73a28d828caa42ff9d3bd2117bd8fcbd"
+    },
+    {
+      "path": "results/audit.json",
+      "bytes": 2613,
+      "sha256": "42df5d818df6b16c2ed529b46338cb5d50f860ddc6d34ee2b51d0193056524a0"
+    },
+    {
+      "path": "results/baseline_scores.csv",
+      "bytes": 185,
+      "sha256": "10008b074712b17b250db94b36e51b2c9f47269d5761546b2bb44b9921ce3e51"
+    },
+    {
+      "path": "results/dataset_overview.csv",
+      "bytes": 363,
+      "sha256": "b5ca536db909b2b2e474e0733bf9f801cb35149637c0b6833dfafec945ef8fdc"
+    },
+    {
+      "path": "results/package_verification.json",
+      "bytes": 394,
+      "sha256": "02d908e1d97a9f533005d94015c800d52a83464de412f39bdd69607fed6d92c5"
+    },
+    {
+      "path": "results/product_features.csv",
+      "bytes": 23167153,
+      "sha256": "60ab04791d834ca07e15dd3b62be15db4115c45b6c596f915fab4ea04e1b404d"
+    },
+    {
+      "path": "results/product_summary.csv",
+      "bytes": 623871,
+      "sha256": "6c5f4251f481e273bd44c1482363d2c45d60dab3616ec69e3e67e6740260dbe3"
+    },
+    {
+      "path": "results/random_product_example.csv",
+      "bytes": 382,
+      "sha256": "0d3b4c78d569005edf11712d902bd761e00c4581f7f19ec6a8829b1dd6d2b676"
+    },
+    {
+      "path": "results/target_distribution.csv",
+      "bytes": 86,
+      "sha256": "fb4054c89b7d332049b939e22fcd1af519bda64830ccae7d0a3d60df14ba53fd"
+    },
+    {
+      "path": "results/target_distribution.png",
+      "bytes": 31706,
+      "sha256": "2951575352a6ad2dac3b8220169d62772374c422c60d2a50a77c5a1c793ddad1"
+    },
+    {
+      "path": "results/verification.json",
+      "bytes": 619,
+      "sha256": "b2119346ef42fe1ae3b8f5b15666f0de82c7f6306d2327fc3cc1b453dbb10233"
+    },
+    {
+      "path": "scripts/analyze_proposal.py",
+      "bytes": 8903,
+      "sha256": "f9afae1f41db59d78370284a140bd455e6e38227762710a641753f889c30414b"
+    },
+    {
+      "path": "scripts/build_proposal_pdf.py",
+      "bytes": 17462,
+      "sha256": "515deb58da91580053ed56b5d7b680547f6d3391bf1e9aac4f73a6cb5722def4"
+    },
+    {
+      "path": "scripts/export_tables.py",
+      "bytes": 1281,
+      "sha256": "3405a7b53b88d49299c1c5c00092b49d84ac4eaa309849a6b0e782900a205f9d"
+    },
+    {
+      "path": "scripts/verify_evidence.py",
+      "bytes": 3145,
+      "sha256": "fb4061026abf8a5c1aa88b1dea50e332426cc1a54869c085568b2918c10d9b02"
+    },
+    {
+      "path": "submission/Assignment6_Proposal_Early_Product_Success.pdf",
+      "bytes": 114968,
+      "sha256": "d496dcc9935d8a7662a876c3d5daca417379c6c0c4477a63ef3e3853766db851"
+    },
+    {
+      "path": "tested_versions.json",
+      "bytes": 424,
+      "sha256": "31efe4c161a44466f620911714f8f5912589b9f46211f66da3a3037770174e85"
+    }
+  ]
+}

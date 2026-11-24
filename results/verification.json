@@ -1,0 +1,29 @@
+{
+  "independent_target_rule_check": "5709 / 5709 match",
+  "training_quantile": 24.0,
+  "confusion_matrix": [
+    [
+      1447,
+      0
+    ],
+    [
+      266,
+      0
+    ]
+  ],
+  "accuracy_direct": 0.8447168709865732,
+  "balanced_accuracy_direct": 0.5,
+  "random_row_source_reconstruction": "passed",
+  "remaining_nonidentical_same_product_user_timestamp_keys": [
+    {
+      "parent_asin": "B09NS1VG4L",
+      "new_asin": "B09NS1VG4L",
+      "first_asin": "B09NS1VG4L",
+      "timestamp": 1652904320703
+    }
+  ],
+  "original_raw_eligible_products": 5787,
+  "shared_key_different_fields": [
+    "helpful_vote"
+  ]
+}

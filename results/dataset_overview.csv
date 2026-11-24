@@ -1,0 +1,15 @@
+﻿metric,value
+raw_reviews,701528
+clean_reviews,694253
+raw_products,112565
+metadata_rows,112590
+raw_exact_duplicate_reviews,7275
+eligible_products,5709
+excluded_under20,106599
+excluded_incomplete_followup,257
+train_n,3996
+test_n,1713
+train_positive,570
+test_positive,266
+median_days_to20,339.0076710185185
+future_count_threshold_training_q75,24.0

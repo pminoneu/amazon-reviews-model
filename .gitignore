@@ -1,0 +1,15 @@
+# Python and Streamlit local files
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.streamlit/secrets.toml
+
+# OS and editor files
+.DS_Store
+.idea/
+.vscode/
+
+# Raw Amazon source data is large and reproducible from the documented sources.
+# The app uses the versioned tables in results/ instead.
+data/

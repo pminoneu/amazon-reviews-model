@@ -1,0 +1,13 @@
+{
+  "target_rules_checked": 5709,
+  "unique_products": 5709,
+  "train_products": 3996,
+  "test_products": 1713,
+  "training_q75": 24.0,
+  "baseline_balanced_accuracy_direct": 0.5,
+  "baseline_accuracy_direct": 0.8447168709865732,
+  "raw_source_hashes": "passed",
+  "sample_product": "B01ETUB7Q2",
+  "sample_features_and_outcome": "recomputed from raw source and matched",
+  "status": "passed"
+}
