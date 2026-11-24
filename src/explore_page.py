@@ -6,30 +6,33 @@ import pandas as pd
 import streamlit as st
 
 from src.data_loader import (
-    HEALTH_CATALOG_PATH,
-    PRODUCT_FEATURES_PATH,
-    load_health_catalog,
-    load_training_products,
+    CATEGORY_FILES,
+    catalog_path,
+    load_historical_peers,
+    load_product_catalog,
+    peer_path,
 )
 
 
 def render_explore_page() -> None:
+    category = st.selectbox("Product category", list(CATEGORY_FILES), key="explore_category")
     catalog_tab, peers_tab = st.tabs(["Product catalog", "Historical peers"])
     with catalog_tab:
-        render_product_catalog()
+        render_product_catalog(category)
     with peers_tab:
-        render_historical_peers()
+        render_historical_peers(category)
 
 
-def render_product_catalog() -> None:
-    st.header("Health & Personal Care product catalog")
+def render_product_catalog(category: str) -> None:
+    st.header(f"{category} product catalog")
     st.write("Search products by product name or ASIN and rank them fairly by rating quality and review volume.")
-    if not HEALTH_CATALOG_PATH.exists():
-        st.info("The Health product catalog has not been built yet.")
-        st.code("python scripts/build_health_catalog.py", language="bash")
+    category_catalog_path = catalog_path(category)
+    if not category_catalog_path.exists():
+        st.info(f"The {category} product catalog has not been built yet.")
+        st.code("python scripts/build_category_assets.py", language="bash")
         return
 
-    catalog = load_health_catalog(HEALTH_CATALOG_PATH.stat().st_mtime_ns)
+    catalog = load_product_catalog(category, category_catalog_path.stat().st_mtime_ns)
     search, minimum_reviews, sort_by = st.columns([3, 1, 2])
     query = search.text_input("Search product name or ASIN", placeholder="e.g., vitamins or B07TDSJZMR")
     review_floor = minimum_reviews.number_input("Minimum reviews", min_value=0, value=10, step=10)
@@ -108,16 +111,17 @@ def render_product_catalog() -> None:
     )
 
 
-def render_historical_peers() -> None:
+def render_historical_peers(category: str) -> None:
     st.header("Explore historical reviews")
-    st.write("Find products with early reviews like yours and compare their later review outcomes.")
+    st.write(f"Find {category} products with early reviews like yours and compare their later review outcomes.")
     st.caption("This view uses historical training products. Comparisons are associations, not proof of cause and effect.")
 
-    if not PRODUCT_FEATURES_PATH.exists():
-        st.error("Historical data is missing: results/product_features.csv")
+    category_peer_path = peer_path(category)
+    if not category_peer_path.exists():
+        st.error(f"Historical data is missing: {category_peer_path.name}")
         return
 
-    products = load_training_products()
+    products = load_historical_peers(category, category_peer_path.stat().st_mtime_ns)
     filter_column, details_column = st.columns([2, 3], gap="large")
     with filter_column.container(border=True):
         st.subheader("Filter peer products")
@@ -141,7 +145,7 @@ def render_historical_peers() -> None:
         first, second = st.columns(2)
         first.metric("Products", f"{count:,}")
         second.metric("Observed success", f"{share:.1%}" if share is not None else "—")
-        st.caption("Overall training reference: 14.3% successful products.")
+        st.caption("Observed success uses the category's later-review volume threshold plus a 4.0+ later rating.")
 
     if not count:
         st.warning("No products match these filters. Broaden a range to view historical peers.")
@@ -153,11 +157,20 @@ def render_historical_peers() -> None:
     st.scatter_chart(chart, x="Days to 20", y="Early stars", color="Later outcome")
 
     st.subheader("Inspect a peer product")
-    selected_id = st.selectbox("Select a product ID", peers["parent_asin"].sort_values().tolist())
+    peer_labels = {
+        row.parent_asin: f"{row.product_name} — {row.parent_asin}"
+        for row in peers[["parent_asin", "product_name"]].itertuples(index=False)
+    }
+    selected_id = st.selectbox(
+        "Select a product",
+        peers["parent_asin"].sort_values().tolist(),
+        format_func=peer_labels.get,
+    )
     selected = peers.loc[peers["parent_asin"] == selected_id].iloc[0]
     product_column, outcome_column = st.columns(2)
     with product_column.container(border=True):
         st.markdown("**Early review signals**")
+        st.write(f"Product: **{selected.product_name}**")
         st.write(f"Average stars: **{selected.early_rating_mean:.2f}**")
         st.write(f"Days to reach 20 reviews: **{selected.days_to_20:.0f}**")
         st.write(f"Low-star share: **{selected.early_low_rating_share:.0%}**")
@@ -169,20 +182,19 @@ def render_historical_peers() -> None:
         st.write(f"Later reviews in 365 days: **{selected.later_review_count_365d:.0f}**")
         later_rating = "No later reviews" if pd.isna(selected.later_rating_mean_365d) else f"{selected.later_rating_mean_365d:.2f}"
         st.write(f"Later average stars: **{later_rating}**")
-
-    with st.expander("Read this product's first 20 reviews"):
-        st.write(selected.early_text)
+        st.write(f"Last 20-review average: **{selected.last_20_rating_mean:.2f}**")
 
     st.subheader("Matching products")
     table = peers[
-        ["parent_asin", "cutoff_utc", "early_rating_mean", "days_to_20", "review_profile", "is_successful"]
+        ["product_name", "parent_asin", "early_rating_mean", "days_to_20", "later_review_count_365d", "last_20_rating_mean", "is_successful"]
     ].rename(
         columns={
-            "parent_asin": "Product ID",
-            "cutoff_utc": "20th-review cutoff",
+            "product_name": "Product name",
+            "parent_asin": "ASIN",
             "early_rating_mean": "Early rating",
             "days_to_20": "Days to 20",
-            "review_profile": "Review profile",
+            "later_review_count_365d": "Later reviews",
+            "last_20_rating_mean": "Last 20 stars",
             "is_successful": "Observed success",
         }
     )

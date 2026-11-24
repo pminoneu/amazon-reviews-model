@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 
+from src.data_loader import CATEGORY_FILES, load_historical_peers, peer_path
 from src.validation import validate_reviews
 
 
@@ -58,6 +60,79 @@ def csv_template() -> bytes:
     return example.to_csv(index=False).encode("utf-8")
 
 
+def find_similar_products(reviews: pd.DataFrame, category: str, limit: int = 5) -> pd.DataFrame:
+    """Rank category-matched historical products by first-20-review similarity."""
+    comparison_path = peer_path(category)
+    peers = load_historical_peers(category, comparison_path.stat().st_mtime_ns).copy()
+    uploaded_stars = reviews["rating"].mean()
+    uploaded_days = max((reviews["date"].max() - reviews["date"].min()).days, 0)
+    uploaded_low_share = reviews["rating"].le(2).mean()
+
+    rating_gap = ((peers["early_rating_mean"] - uploaded_stars).abs() / 0.50).clip(upper=1)
+    time_gap = (
+        (peers["days_to_20"].map(math.log1p) - math.log1p(uploaded_days)).abs() / math.log(2)
+    ).clip(upper=1)
+    low_star_gap = ((peers["early_low_rating_share"] - uploaded_low_share).abs() / 0.15).clip(upper=1)
+    peers["similarity"] = 100 * (1 - 0.50 * rating_gap - 0.35 * time_gap - 0.15 * low_star_gap)
+    return peers.sort_values(
+        ["similarity", "later_review_count_365d"], ascending=[False, False]
+    ).head(limit)
+
+
+def render_similar_products(reviews: pd.DataFrame, category: str) -> None:
+    """Show outcomes for the closest category-matched historical products."""
+    if not peer_path(category).exists():
+        st.info("Historical comparison data is not available for this category yet.")
+        return
+    peers = find_similar_products(reviews, category)
+    if peers.empty:
+        st.info("No historical products were available for comparison.")
+        return
+
+    st.subheader("Similar historical products")
+    st.caption(
+        "Matches use only the first 20 reviews: average stars, days to reach 20 reviews, and low-star share. "
+        "Later outcomes are shown after matching, not used to select the products."
+    )
+    median_later_reviews = peers["later_review_count_365d"].median()
+    median_later_stars = peers["later_rating_mean_365d"].median()
+    first, second = st.columns(2)
+    first.metric("Median later reviews", f"{median_later_reviews:.0f}")
+    second.metric("Median later stars", f"{median_later_stars:.2f}" if pd.notna(median_later_stars) else "—")
+
+    display = peers[
+        [
+            "product_name",
+            "early_rating_mean",
+            "days_to_20",
+            "later_review_count_365d",
+            "later_rating_mean_365d",
+            "last_20_rating_mean",
+        ]
+    ].rename(
+        columns={
+            "product_name": "Similar product",
+            "early_rating_mean": "First 20 stars",
+            "days_to_20": "Days to 20",
+            "later_review_count_365d": "Later reviews",
+            "later_rating_mean_365d": "Later stars",
+            "last_20_rating_mean": "Last 20 stars",
+        }
+    )
+    st.dataframe(
+        display,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "First 20 stars": st.column_config.NumberColumn(format="%.2f"),
+            "Days to 20": st.column_config.NumberColumn(format="%.0f"),
+            "Later reviews": st.column_config.NumberColumn(format="%d"),
+            "Later stars": st.column_config.NumberColumn(format="%.2f"),
+            "Last 20 stars": st.column_config.NumberColumn(format="%.2f"),
+        },
+    )
+
+
 def render_predict_page() -> None:
     st.header("Predict a product's review outlook")
     thumbnail_column, product_column = st.columns([1, 6], vertical_alignment="center")
@@ -66,6 +141,13 @@ def render_predict_page() -> None:
     with product_column:
         st.subheader("Lavender Daily Moisturizer")
         st.caption("Example product - upload the complete first 20 reviews for one parent product.")
+
+    category = st.selectbox(
+        "Comparison category",
+        list(CATEGORY_FILES),
+        help="Your uploaded reviews will be compared only with products from this category.",
+        key="predict_category",
+    )
 
     st.download_button(
         "Download CSV template",
@@ -113,6 +195,8 @@ def render_predict_page() -> None:
         st.subheader("Model result")
         # Week 3: replace False with the model's Boolean class prediction.
         render_decision_card(predicted_success=False, preview=True)
+
+    render_similar_products(reviews, category)
 
     with st.expander("Preview uploaded reviews"):
         st.dataframe(reviews, use_container_width=True, hide_index=True)
