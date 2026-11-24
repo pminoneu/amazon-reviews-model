@@ -5,10 +5,83 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from src.data_loader import PRODUCT_FEATURES_PATH, load_training_products
+from src.data_loader import (
+    HEALTH_CATALOG_PATH,
+    PRODUCT_FEATURES_PATH,
+    load_health_catalog,
+    load_training_products,
+)
 
 
 def render_explore_page() -> None:
+    catalog_tab, peers_tab = st.tabs(["Product catalog", "Historical peers"])
+    with catalog_tab:
+        render_product_catalog()
+    with peers_tab:
+        render_historical_peers()
+
+
+def render_product_catalog() -> None:
+    st.header("Health & Personal Care product catalog")
+    st.write("Search products by ASIN or sample review title and rank them fairly by rating quality and review volume.")
+    if not HEALTH_CATALOG_PATH.exists():
+        st.info("The Health product catalog has not been built yet.")
+        st.code("python scripts/build_health_catalog.py", language="bash")
+        return
+
+    catalog = load_health_catalog()
+    search, minimum_reviews, sort_by = st.columns([3, 1, 2])
+    query = search.text_input("Search sample review title or ASIN", placeholder="e.g., vitamins or B07TDSJZMR")
+    review_floor = minimum_reviews.number_input("Minimum reviews", min_value=0, value=10, step=10)
+    sort_option = sort_by.selectbox(
+        "Sort by",
+        ["Weighted rating", "Average stars", "Review count"],
+    )
+
+    filtered = catalog.loc[catalog["review_count"] >= review_floor].copy()
+    if query:
+        matches = (
+            filtered["sample_review_title"].str.contains(query, case=False, na=False)
+            | filtered["parent_asin"].str.contains(query, case=False, na=False)
+        )
+        filtered = filtered.loc[matches]
+
+    sort_column = {
+        "Weighted rating": "weighted_rating",
+        "Average stars": "average_stars",
+        "Review count": "review_count",
+    }[sort_option]
+    filtered = filtered.sort_values([sort_column, "review_count"], ascending=False)
+    first, second = st.columns(2)
+    first.metric("Matching products", f"{len(filtered):,}")
+    second.metric("Ranking method", "Bayesian weighted rating" if sort_option == "Weighted rating" else sort_option)
+    st.caption(
+        "Weighted rating combines a product's average stars with its review count, pulling low-volume products toward the category average. "
+        "Product names and thumbnails require the matching Health metadata file; this review-only catalog shows a sample review title."
+    )
+    display = filtered[["sample_review_title", "parent_asin", "average_stars", "review_count", "weighted_rating"]].rename(
+        columns={
+            "sample_review_title": "Sample review title",
+            "parent_asin": "ASIN",
+            "average_stars": "Average stars",
+            "review_count": "Reviews",
+            "weighted_rating": "Weighted rating",
+        }
+    )
+    st.dataframe(
+        display,
+        use_container_width=True,
+        hide_index=True,
+        height=500,
+        column_config={
+            "Average stars": st.column_config.NumberColumn(format="%.2f"),
+            "Weighted rating": st.column_config.NumberColumn(format="%.2f"),
+            "Reviews": st.column_config.NumberColumn(format="%d"),
+        },
+    )
+
+
+def render_historical_peers() -> None:
     st.header("Explore historical reviews")
     st.write("Find products with early reviews like yours and compare their later review outcomes.")
     st.caption("This view uses historical training products. Comparisons are associations, not proof of cause and effect.")

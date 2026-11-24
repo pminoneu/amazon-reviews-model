@@ -10,6 +10,7 @@ import streamlit as st
 
 ROOT = Path(__file__).resolve().parents[1]
 PRODUCT_FEATURES_PATH = ROOT / "results" / "product_features.csv"
+HEALTH_CATALOG_PATH = ROOT / "results" / "health_product_catalog.csv"
 
 
 @st.cache_data(show_spinner="Loading historical products...")
@@ -44,3 +45,9 @@ def review_profile(product: pd.Series) -> str:
     if product["early_rating_mean"] >= 3.50:
         return "Mixed early reviews"
     return "Mostly negative early reviews"
+
+
+@st.cache_data(show_spinner="Loading Health & Personal Care products...")
+def load_health_catalog() -> pd.DataFrame:
+    """Load the compact catalog derived from the local Health review file."""
+    return pd.read_csv(HEALTH_CATALOG_PATH)
