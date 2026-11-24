@@ -93,8 +93,11 @@ def find_similar_products(reviews: pd.DataFrame, category: str, limit: int = 5) 
     ).clip(upper=1)
     low_star_gap = ((peers["early_low_rating_share"] - uploaded_low_share).abs() / 0.15).clip(upper=1)
     peers["similarity"] = 100 * (1 - 0.50 * rating_gap - 0.35 * time_gap - 0.15 * low_star_gap)
-    return peers.sort_values(
+    closest_candidates = peers.sort_values(
         ["similarity", "later_review_count_365d"], ascending=[False, False]
+    ).head(25)
+    return closest_candidates.sort_values(
+        ["last_20_rating_mean", "later_review_count_365d"], ascending=[False, False]
     ).head(limit)
 
 
@@ -111,7 +114,7 @@ def render_similar_products(reviews: pd.DataFrame, category: str) -> None:
     st.subheader("Similar historical products")
     st.caption(
         "Matches use only the first 20 reviews: average stars, days to reach 20 reviews, and low-star share. "
-        "Later outcomes are shown after matching, not used to select the products."
+        "The five closest matches are then ordered by their current star rating."
     )
     median_later_reviews = peers["later_review_count_365d"].median()
     median_later_stars = peers["later_rating_mean_365d"].median()
@@ -135,7 +138,7 @@ def render_similar_products(reviews: pd.DataFrame, category: str) -> None:
             "days_to_20": "Days to 20",
             "later_review_count_365d": "Later reviews",
             "later_rating_mean_365d": "Later stars",
-            "last_20_rating_mean": "Last 20 stars",
+            "last_20_rating_mean": "Current stars",
         }
     )
     st.dataframe(
@@ -147,7 +150,7 @@ def render_similar_products(reviews: pd.DataFrame, category: str) -> None:
             "Days to 20": st.column_config.NumberColumn(format="%.0f"),
             "Later reviews": st.column_config.NumberColumn(format="%d"),
             "Later stars": st.column_config.NumberColumn(format="%.2f"),
-            "Last 20 stars": st.column_config.NumberColumn(format="%.2f"),
+            "Current stars": st.column_config.NumberColumn(format="%.2f"),
         },
     )
 
