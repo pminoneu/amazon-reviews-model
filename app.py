@@ -5,7 +5,12 @@ from src.predict_page import render_predict_page
 from src.styles import apply_app_styles
 
 
-st.set_page_config(page_title="Review Outlook", page_icon="⭐", layout="wide")
+st.set_page_config(
+    page_title="Review Outlook",
+    page_icon="⭐",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 apply_app_styles()
 
 if "active_page" not in st.session_state:
