@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import pandas as pd
 import streamlit as st
-import altair as alt
 
 from src.data_loader import (
     HEALTH_CATALOG_PATH,
@@ -71,40 +70,6 @@ def render_product_catalog() -> None:
         "Sustained high ratings": "Requires at least 40 reviews, a recent 20-review average of 4.5+, and no decline greater than 0.25 stars from the first 20 reviews.",
     }
     st.caption(descriptions.get(sort_option, "Products are ranked by the selected metric."))
-    if sort_option == "Fastest early traction":
-        chart_data = filtered.dropna(subset=["early_review_pace", "weighted_rating"]).copy()
-        chart_data = chart_data.loc[chart_data["early_review_pace"] > 0]
-        if not chart_data.empty:
-            st.subheader("Early review speed and weighted rating")
-            st.caption(
-                "Each point is a filtered product with at least 20 reviews. The horizontal scale is logarithmic, so both slower and faster-growing products remain visible."
-            )
-            chart = (
-                alt.Chart(chart_data)
-                .mark_circle(size=55, opacity=0.55)
-                .encode(
-                    x=alt.X(
-                        "early_review_pace:Q",
-                        title="Early reviews per month (log scale)",
-                        scale=alt.Scale(type="log"),
-                    ),
-                    y=alt.Y(
-                        "weighted_rating:Q",
-                        title="Weighted rating",
-                        scale=alt.Scale(domain=[3, 5]),
-                    ),
-                    color=alt.Color("average_stars:Q", title="Average stars", scale=alt.Scale(scheme="tealblues")),
-                    tooltip=[
-                        alt.Tooltip("product_name:N", title="Product"),
-                        alt.Tooltip("weighted_rating:Q", title="Weighted rating", format=".2f"),
-                        alt.Tooltip("average_stars:Q", title="Average stars", format=".2f"),
-                        alt.Tooltip("review_count:Q", title="Reviews", format=","),
-                        alt.Tooltip("days_to_20:Q", title="Days to 20 reviews", format=".0f"),
-                    ],
-                )
-                .interactive()
-            )
-            st.altair_chart(chart, use_container_width=True)
     display_columns = ["product_name", "average_stars", "review_count", "weighted_rating"]
     if sort_option == "Fastest early traction":
         display_columns += ["days_to_20", "early_review_pace"]
