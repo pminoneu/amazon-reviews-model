@@ -21,17 +21,12 @@ def render_explore_page() -> None:
         "Explore products",
         "Browse category data, compare historical review outcomes, and rank products with more context than star ratings alone.",
     )
-    category = st.selectbox("Product category", list(CATEGORY_FILES), key="explore_category")
-    catalog_tab, peers_tab = st.tabs(["Product catalog", "Historical peers"])
-    with catalog_tab:
-        render_product_catalog(category)
-    with peers_tab:
-        render_historical_peers(category)
+    render_product_catalog()
 
 
-def render_product_catalog(category: str) -> None:
-    st.header(f"{category} product catalog")
-    st.write("Search products by product name or ASIN and rank them fairly by rating quality and review volume.")
+def render_product_catalog() -> None:
+    filters = st.columns([2, 3, 1.25, 2], vertical_alignment="bottom")
+    category = filters[0].selectbox("Product category", list(CATEGORY_FILES), key="explore_category")
     category_catalog_path = catalog_path(category)
     if not category_catalog_path.exists():
         st.info(f"The {category} product catalog has not been built yet.")
@@ -39,10 +34,9 @@ def render_product_catalog(category: str) -> None:
         return
 
     catalog = load_product_catalog(category, category_catalog_path.stat().st_mtime_ns)
-    search, minimum_reviews, sort_by = st.columns([3, 1, 2])
-    query = search.text_input("Search product name or ASIN", placeholder="e.g., vitamins or B07TDSJZMR")
-    review_floor = minimum_reviews.number_input("Minimum reviews", min_value=0, value=10, step=10)
-    sort_option = sort_by.selectbox(
+    query = filters[1].text_input("Search product or ASIN", placeholder="e.g., vitamins or B07TDSJZMR")
+    review_floor = filters[2].number_input("Minimum reviews", min_value=0, value=10, step=10)
+    sort_option = filters[3].selectbox(
         "Sort by",
         ["Weighted rating", "Average stars", "Review count", "Fastest early traction", "Sustained high ratings"],
     )
