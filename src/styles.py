@@ -45,6 +45,25 @@ def apply_app_styles() -> None:
           .product-identity { display:flex; align-items:center; gap:1rem; padding:.2rem 0 1.1rem; }
           .product-identity h3 { margin:0; color:var(--ink); font-size:1.2rem; }
           .category-chip { display:inline-block; color:#007f9b; background:#dff8fc; border-radius:999px; font-size:.78rem; font-weight:700; padding:.28rem .7rem; margin-top:.32rem; }
+          .review-summary-card, .outlook-card { height:100%; min-height:190px; box-sizing:border-box; border:1px solid var(--border); border-radius:14px; background:white; padding:1.1rem 1.2rem; }
+          .review-summary-card h3, .outlook-title { color:var(--ink); font-size:1.22rem; font-weight:760; letter-spacing:-.025em; margin:0 0 1rem; }
+          .summary-content { display:grid; grid-template-columns:1fr 1fr 1.35fr; gap:.85rem; align-items:stretch; }
+          .summary-metric { background:#f2f5f9; border-radius:11px; padding:.85rem .9rem; display:flex; flex-direction:column; justify-content:space-between; min-height:90px; }
+          .summary-metric span { color:var(--muted); font-size:.76rem; font-weight:650; }
+          .summary-metric strong { color:var(--ink); font-size:2.2rem; line-height:1; letter-spacing:-.06em; }
+          .rating-breakdown { border-left:1px solid var(--border); padding:.1rem 0 .1rem .9rem; }
+          .rating-row { display:grid; grid-template-columns:28px 1fr 18px; align-items:center; gap:.42rem; color:var(--muted); font-size:.76rem; font-weight:650; margin:.34rem 0; }
+          .rating-track { height:8px; border-radius:999px; background:#e2e8ef; overflow:hidden; }
+          .rating-fill { display:block; height:100%; border-radius:999px; background:var(--cyan); }
+          .outlook-card { text-align:center; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+          .outlook-title { align-self:flex-start; margin-bottom:.7rem; }
+          .outlook-result { display:flex; align-items:center; justify-content:center; gap:1rem; }
+          .outlook-result span { display:grid; place-items:center; width:70px; height:70px; border-radius:18px; font-size:2.45rem; }
+          .outlook-result strong { font-size:3.2rem; letter-spacing:-.06em; }
+          .outlook-card p { color:var(--muted); font-size:.77rem; margin:.55rem 0 0; }
+          .outlook-preview { color:var(--muted); font-size:.67rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; margin-top:.3rem; }
+          .outlook-positive .outlook-result span { background:#e3f5e7; } .outlook-positive .outlook-result strong { color:#14833c; }
+          .outlook-negative .outlook-result span { background:#fde7e8; } .outlook-negative .outlook-result strong { color:#bd3041; }
           h2, h3 { color:var(--ink); letter-spacing:-.025em; }
           h2 { font-size:1.28rem !important; margin-top:.3rem; }
           [data-testid="stMetric"] { background:white; border:1px solid var(--border); border-radius:13px; padding:.9rem 1rem; box-shadow:none; }

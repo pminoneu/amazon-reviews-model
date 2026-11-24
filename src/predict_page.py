@@ -21,30 +21,48 @@ def render_decision_card(predicted_success: bool, preview: bool = False) -> None
     """Show the model's Boolean prediction as a clear Yes/No result."""
     label = "Yes" if predicted_success else "No"
     icon = "👍" if predicted_success else "👎"
-    background = "#e8f5e9" if predicted_success else "#ffebee"
-    text_color = "#1b5e20" if predicted_success else "#8b1e1e"
+    status_class = "outlook-positive" if predicted_success else "outlook-negative"
+    preview_label = '<div class="outlook-preview">Model preview</div>' if preview else ""
     st.markdown(
         f"""
-        <div style="
-            background: {background};
-            border: 1px solid {text_color};
-            border-radius: 12px;
-            color: {text_color};
-            padding: 24px;
-            text-align: center;">
-            <div style="font-size: 16px;">Expected to meet the review-success proxy?</div>
-            <div style="font-size: 48px; margin: 10px 0;">{icon}</div>
-            <div style="font-size: 42px; font-weight: 700;">{label}</div>
-        </div>
+        <section class="outlook-card {status_class}">
+            <div class="outlook-title">Outlook</div>
+            <div class="outlook-result"><span>{icon}</span><strong>{label}</strong></div>
+            {preview_label}
+            <p>Expected to meet the review-success proxy</p>
+        </section>
         """,
         unsafe_allow_html=True,
     )
-    if preview:
-        st.warning(
-            "Interface preview: this No result is illustrative until the trained model is connected."
-        )
-    st.caption(
-        "The proxy is 24+ later reviews with an average later rating of at least 4.0, within 365 days."
+
+
+def render_review_summary(reviews: pd.DataFrame) -> None:
+    """Render the mockup-style summary panel after a valid upload."""
+    average_stars = reviews["rating"].mean()
+    days_to_20 = (reviews["date"].max() - reviews["date"].min()).days
+    star_counts = reviews["rating"].value_counts().reindex([5, 4, 3, 2, 1], fill_value=0)
+    breakdown = "".join(
+        f'''
+        <div class="rating-row">
+          <span>{star} ★</span>
+          <span class="rating-track"><span class="rating-fill" style="width: {count / len(reviews) * 100:.0f}%"></span></span>
+          <span>{count}</span>
+        </div>
+        '''
+        for star, count in star_counts.items()
+    )
+    st.markdown(
+        f"""
+        <section class="review-summary-card">
+          <h3>Early review summary</h3>
+          <div class="summary-content">
+            <div class="summary-metric"><span>Average stars</span><strong>{average_stars:.2f}</strong></div>
+            <div class="summary-metric"><span>Days to 20 reviews</span><strong>{days_to_20}</strong></div>
+            <div class="rating-breakdown">{breakdown}</div>
+          </div>
+        </section>
+        """,
+        unsafe_allow_html=True,
     )
 
 
@@ -187,22 +205,13 @@ def render_predict_page() -> None:
             st.error(error)
         return
 
-    st.success("20 / 20 valid reviews received. The file is ready for the model pipeline.")
+    st.success("20 / 20 valid reviews received.")
     summary_column, result_column = st.columns([3, 2], gap="large")
-    star_counts = reviews["rating"].value_counts().reindex([5, 4, 3, 2, 1], fill_value=0)
 
-    with summary_column.container(border=True):
-        st.subheader("Early review summary")
-        first, second = st.columns(2)
-        first.metric("Average stars", f"{reviews['rating'].mean():.2f}")
-        second.metric("Days to review 20", f"{(reviews['date'].max() - reviews['date'].min()).days} days")
-        st.markdown("**Star-rating breakdown**")
-        stars = st.columns(5)
-        for column, star in zip(stars, [5, 4, 3, 2, 1]):
-            column.metric(f"{'★' * star}", star_counts[star])
+    with summary_column:
+        render_review_summary(reviews)
 
-    with result_column.container(border=True):
-        st.subheader("Model result")
+    with result_column:
         # Week 3: replace False with the model's Boolean class prediction.
         render_decision_card(predicted_success=False, preview=True)
 
