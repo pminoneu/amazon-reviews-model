@@ -134,6 +134,7 @@ def render_similar_products(reviews: pd.DataFrame, category: str) -> None:
 
 
 def render_predict_page() -> None:
+    st.markdown('<div class="section-kicker">Review forecast</div>', unsafe_allow_html=True)
     st.header("Predict a product's review outlook")
     thumbnail_column, product_column = st.columns([1, 6], vertical_alignment="center")
     with thumbnail_column:

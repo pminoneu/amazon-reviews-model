@@ -15,6 +15,7 @@ from src.data_loader import (
 
 
 def render_explore_page() -> None:
+    st.markdown('<div class="section-kicker">Category intelligence</div>', unsafe_allow_html=True)
     category = st.selectbox("Product category", list(CATEGORY_FILES), key="explore_category")
     catalog_tab, peers_tab = st.tabs(["Product catalog", "Historical peers"])
     with catalog_tab:
